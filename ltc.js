@@ -25,7 +25,6 @@ var twoSided = false;
 
 window.onload = function() {
   init();
-  $("#stuff").show();
 }
 
 function FetchFile(url, cache)
@@ -94,16 +93,11 @@ function init() {
 
   $("canvas").mousewheel(function(event, delta) {
     g_zoom += delta*10.0;
-    g_sample_count = 0;
     //    console.log("pageX: " + event.pageX + " pageY: " + event.pageY);
     return false;
   });
 
-  $("canvas").attr("tabindex", "0").keydown(function(event) {
-    //console.log(event);
-    return false;
-  });
-
+  initParams();
   bindListeners();
 
 
@@ -133,9 +127,6 @@ function init() {
 
 
 function onWindowResize(event) {
-  $("#peekaboo").css("height", window.innerHeight);
-  $("#stuff").css("height", window.innerHeight);
-
   canvas.width  = 512; // window.innerWidth;
   canvas.height = 512; // window.innerHeight;
 
@@ -227,6 +218,17 @@ function checkGLError() {
   }
 }
 
+function initParams() {
+  roughness = $('#roughness-slider')[0].value;
+  intensity = $('#intensity-slider')[0].value;
+  width = $('#width-slider')[0].value;
+  height = $('#height-slider')[0].value;
+  rotationY = $('#rotation-y-slider')[0].value;
+  rotationZ = $('#rotation-z-slider')[0].value;
+  twoSided = $('#two-sided-checkbox')[0].value;
+}
+
+
 function bindListeners() {
   $('#roughness-slider').change(function(evnet) {
     roughness = evnet.target.value;
@@ -273,11 +275,11 @@ function draw() {
 
   checkGLError();
 
-    // Add in camera controller's rotation
-    view.loadIdentity();
-    view.translate(0, 6, 0.1*g_zoom - 0.5);
-    view.rotate(controller.xRot - 10.0, 1, 0, 0);
-    view.rotate(controller.yRot, 0, 1, 0);;
+  // Add in camera controller's rotation
+  view.loadIdentity();
+  view.translate(0, 6, 0.1*g_zoom - 0.5);
+  view.rotate(controller.xRot - 10.0, 1, 0, 0);
+  view.rotate(controller.yRot, 0, 1, 0);;
 
   // Get var locations
   vertexPositionLocation = gl.getAttribLocation(currentProgram, "position");
@@ -286,19 +288,19 @@ function draw() {
     return gl.getUniformLocation(currentProgram, u);
   }
 
+  gl.uniform3f(location("lightColor"), 1, 1, 1);
   gl.uniform1f(location("roughness"), roughness);
-  gl.uniform3f(location("dcolor"), 1, 1, 1);
-  gl.uniform3f(location("scolor"), 1, 1, 1);
+  gl.uniform3f(location("diffuseColor"), 1, 1, 1);
+  gl.uniform3f(location("specularColor"), 1, 1, 1);
   gl.uniform1f(location("intensity"), intensity);
   gl.uniform1f(location("width"), width);
   gl.uniform1f(location("height"), height);
-  gl.uniform1f(location("roty"), rotationY);
-  gl.uniform1f(location("rotz"), rotationZ);
+  gl.uniform1f(location("rotationY"), rotationY);
+  gl.uniform1f(location("rotationZ"), rotationZ);
   gl.uniform1i(location("twoSided"), twoSided);
 
 
   gl.uniformMatrix4fv(location("view"), gl.FALSE, new Float32Array(view.elements));
-  gl.uniform1f(location("time"), parameters.time/1000);
   gl.uniform2f(location("resolution"), parameters.screenWidth, parameters.screenHeight);
 
   gl.activeTexture(gl.TEXTURE0);
@@ -310,15 +312,6 @@ function draw() {
   gl.uniform1i(gl.getUniformLocation(currentProgram, "ltc_mag"), 1);
 
   checkGLError();
-
-
-  if (g_sample_count === 0) {
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-  }
-
-  gl.uniform1i(location("sampleCount"), g_sample_count);
-  g_sample_count += 8;
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE);
